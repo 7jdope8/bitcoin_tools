@@ -1,4 +1,4 @@
-from urllib2 import urlopen, Request
+from urllib.request import urlopen, Request
 from json import loads
 
 
@@ -136,7 +136,8 @@ def encode_varint(value):
             prefix = 255  # 0xFF
         else:
             raise Exception("Wrong input data size")
-        varint = format(prefix, 'x') + change_endianness(int2bytes(value, size))
+        varint = format(prefix, 'x') + \
+            change_endianness(int2bytes(value, size))
 
     return varint
 
@@ -156,7 +157,8 @@ def check_public_key(pk):
     if prefix not in ["02", "03", "04"]:
         raise Exception("Wrong public key format.")
     if prefix == "04" and l != 130:
-        raise Exception("Wrong length for an uncompressed public key: " + str(l))
+        raise Exception(
+            "Wrong length for an uncompressed public key: " + str(l))
     elif prefix in ["02", "03"] and l != 66:
         raise Exception("Wrong length for a compressed public key: " + str(l))
     else:
@@ -180,7 +182,8 @@ def check_address(btc_addr, network='test'):
     elif network not in ['test', 'testnet', 'main', 'mainnet']:
         raise Exception("Network must be test/testnet or main/mainnet")
     elif len(btc_addr) not in range(26, 35+1):
-        raise Exception("Wrong address format, Bitcoin addresses should be 27-35 hex char long.")
+        raise Exception(
+            "Wrong address format, Bitcoin addresses should be 27-35 hex char long.")
     else:
         return True
 
@@ -334,6 +337,3 @@ def parse_script_type(t):
         r = "unknown"
 
     return r
-
-
-
