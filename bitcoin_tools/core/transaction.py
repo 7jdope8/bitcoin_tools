@@ -559,7 +559,7 @@ class TX:
             print("\t input script (scriptSig): " + self.scriptSig[i].content)
             print("\t decoded scriptSig: " +
                   Script.deserialize(self.scriptSig[i].content))
-            if self.scriptSig[i].type is "P2SH":
+            if self.scriptSig[i].type == "P2SH":
                 print("\t \t decoded redeemScript: " +
                       InputScript.deserialize(self.scriptSig[i].get_element(-1)[1:-1]))
             print("\t nSequence: " +
