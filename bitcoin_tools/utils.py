@@ -14,9 +14,10 @@ def change_endianness(x):
     # If there is an odd number of elements, we make it even by adding a 0
     if (len(x) % 2) == 1:
         x += "0"
-    y = x.decode('hex')
-    z = y[::-1]
-    return z.encode('hex')
+    y = hexlify(unhexlify(x)[::-1]).decode()
+    # y = x.encode()  # .decode('hex')
+    # z = hexlify(y[::-1]).decode()
+    return y
 
 
 def int2bytes(a, b):
