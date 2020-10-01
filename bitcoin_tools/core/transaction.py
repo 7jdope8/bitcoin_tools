@@ -398,22 +398,22 @@ class TX:
 
             # Then, depending on the format how the private keys have been passed to the signing function
             # and the content of the ScripSig field, a different final scriptSig will be created.
-            if isinstance(sk[i], list) and unsigned_tx.scriptSig[index[i]].type is "P2MS":
+            if isinstance(sk[i], list) and unsigned_tx.scriptSig[index[i]].type == "P2MS":
                 sigs = []
                 for k in sk[i]:
                     sigs.append(ecdsa_tx_sign(
                         unsigned_tx.serialize(), k, hashflag, deterministic))
                 iscript = InputScript.P2MS(sigs)
-            elif isinstance(sk[i], SigningKey) and unsigned_tx.scriptSig[index[i]].type is "P2PK":
+            elif isinstance(sk[i], SigningKey) and unsigned_tx.scriptSig[index[i]].type == "P2PK":
                 s = ecdsa_tx_sign(unsigned_tx.serialize(),
                                   sk[i], hashflag, deterministic)
                 iscript = InputScript.P2PK(s)
-            elif isinstance(sk[i], SigningKey) and unsigned_tx.scriptSig[index[i]].type is "P2PKH":
+            elif isinstance(sk[i], SigningKey) and unsigned_tx.scriptSig[index[i]].type == "P2PKH":
                 s = ecdsa_tx_sign(unsigned_tx.serialize(),
                                   sk[i], hashflag, deterministic)
                 pk = serialize_pk(sk[i].get_verifying_key(), compressed)
                 iscript = InputScript.P2PKH(s, pk)
-            elif unsigned_tx.scriptSig[index[i]].type is "unknown":
+            elif unsigned_tx.scriptSig[index[i]].type == "unknown":
                 raise Exception(
                     "Unknown previous transaction output script type. Can't sign the transaction.")
             else:
