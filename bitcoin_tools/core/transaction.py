@@ -272,7 +272,6 @@ class TX:
             tx.scriptPubKey.append(OutputScript.from_hex(
                 parse_element(tx, tx.scriptPubKey_len[i])))
 
-        # todo! add witness script parsing
         if tx.isWitness:
             tx.witness_count = int(parse_varint(tx))
             for _ in range(tx.witness_count):
@@ -280,7 +279,7 @@ class TX:
                 tx.scriptWitness.append(
                     parse_element(tx, tx.scriptWitness_len[_]))
 
-        tx.nLockTime = int(parse_element(tx, 4), 16)
+        tx.nLockTime = int(change_endianness(parse_element(tx, 4)), 16)
 
         if tx.offset != len(tx.hex):  # and not tx.isWitness:
             raise Exception("There is some error in the serialized transaction passed as input. Transaction can't"

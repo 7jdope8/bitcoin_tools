@@ -62,3 +62,8 @@ tx = TX.deserialize(hex_tx)
 
 # Then, the transaction can be displayed using the display method to analyze how it's been constructed.
 tx.display()
+
+# todo!
+# locktime calc!
+# vout witness_v0_keyhash type?
+# bc1 addresses
