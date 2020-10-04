@@ -18,6 +18,7 @@ class TX:
         self.version = None
         self.inputs = None
         self.outputs = None
+        self.witness_count = None
         self.nLockTime = None
         self.prev_tx_id = []
         self.prev_out_index = []
@@ -27,7 +28,10 @@ class TX:
         self.value = []
         self.scriptPubKey = []
         self.scriptPubKey_len = []
+        self.scriptWitness = []
+        self.scriptWitness_len = []
 
+        self.isWitness = None  # TX type (SegWit or not)
         self.offset = 0
         self.hex = ""
 
@@ -230,19 +234,32 @@ class TX:
         tx = cls()
         tx.hex = hex_tx
 
+        # first 4 bytes - TX version
         tx.version = int(change_endianness(parse_element(tx, 4)), 16)
 
         # INPUTS
         tx.inputs = int(parse_varint(tx), 16)
 
+        if tx.inputs > 0:  # regular TX
+            tx.isWitness = False
+        else:  # witness TX
+            tx.isWitness = True
+            flag = parse_element(tx, 1)  # check flag and shift 2 bytes
+            # get witness TX inputs count as varint
+            tx.inputs = int(parse_varint(tx), 16)
+
         for i in range(tx.inputs):
+            # outpoint txid
             tx.prev_tx_id.append(change_endianness(parse_element(tx, 32)))
+            #outpoint vout #
             tx.prev_out_index.append(
                 int(change_endianness(parse_element(tx, 4)), 16))
             # ScriptSig
             tx.scriptSig_len.append(int(parse_varint(tx), 16))
+            # asm/hex
             tx.scriptSig.append(InputScript.from_hex(
                 parse_element(tx, tx.scriptSig_len[i])))
+            # sequence
             tx.nSequence.append(int(parse_element(tx, 4), 16))
 
         # OUTPUTS
@@ -255,9 +272,17 @@ class TX:
             tx.scriptPubKey.append(OutputScript.from_hex(
                 parse_element(tx, tx.scriptPubKey_len[i])))
 
+        # todo! add witness script parsing
+        if tx.isWitness:
+            tx.witness_count = int(parse_varint(tx))
+            for _ in range(tx.witness_count):
+                tx.scriptWitness_len.append(int(parse_varint(tx), 16))
+                tx.scriptWitness.append(
+                    parse_element(tx, tx.scriptWitness_len[_]))
+
         tx.nLockTime = int(parse_element(tx, 4), 16)
 
-        if tx.offset != len(tx.hex):
+        if tx.offset != len(tx.hex):  # and not tx.isWitness:
             raise Exception("There is some error in the serialized transaction passed as input. Transaction can't"
                             " be built")
         else:
@@ -546,6 +571,12 @@ class TX:
 
         print("version: " + str(self.version) +
               " (" + change_endianness(int2bytes(self.version, 4)) + ")")
+        if self.version == 2:
+            print('BIP68 Relative lock-time using consensus-enforced sequence numbers')
+        if self.isWitness:
+            print('Witness TX')
+        else:
+            print('Non-Witness TX')
         print("number of inputs: " + str(self.inputs) +
               " (" + encode_varint(self.inputs) + ")")
         for i in range(self.inputs):
@@ -564,6 +595,11 @@ class TX:
                       InputScript.deserialize(self.scriptSig[i].get_element(-1)[1:-1]))
             print("\t nSequence: " +
                   str(self.nSequence[i]) + " (" + int2bytes(self.nSequence[i], 4) + ")")
+            if self.isWitness:  # todo! chack if there a TX with more than 1 witnes vin or with witness 0
+                print("\t txinwitness:")
+                for _ in self.scriptWitness:
+                    print('\t\t', _)
+
         print("number of outputs: " + str(self.outputs) +
               " (" + encode_varint(self.outputs) + ")")
         for i in range(self.outputs):

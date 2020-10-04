@@ -52,6 +52,9 @@ def parse_element(tx, size):
     """
 
     element = tx.hex[tx.offset:tx.offset + size * 2]
+    # if tx.isWitness:  # todo!
+    #     pass
+    # else:
     tx.offset += size * 2
     return element
 
@@ -67,12 +70,20 @@ def parse_varint(tx):
 
     # First of all, the offset of the hex transaction if moved to the proper position (i.e where the varint should be
     #  located) and the length and format of the data to be analyzed is checked.
-    data = tx.hex[tx.offset:]
-    assert (len(data) > 0)
+    data = tx.hex[tx.offset:]  # rest of TX_hex after prev element were parsed
+    assert (len(data) > 0)  # check if the rest of TX_hex more than 0
+    # calc next two bytes as the size of following varint data
     size = int(data[:2], 16)
     assert (size <= 255)
 
-    # Then, the integer is encoded as a varint using the proper prefix, if needed.
+    # Then, the integer is encoded as a varInt using the proper prefix, if needed.
+    # if size == 0:
+    #     # pass
+    #     # print('TX has no VINs, so this is a BIP141 SegWit TX!')
+    #     # storage_length = 0
+    #     tx.offset += 4  # todo in case of marker and flag, in other cases should be +2 only!
+    #     varint = '00'
+    #     return varint
     if size <= 252:  # No prefix
         storage_length = 1
     elif size == 253:  # 0xFD
