@@ -18,8 +18,8 @@ class TX:
         self.version = None
         self.inputs = None
         self.outputs = None
-        self.witness_count = None
         self.nLockTime = None
+        self.witness_count = []
         self.prev_tx_id = []
         self.prev_out_index = []
         self.scriptSig = []
@@ -28,8 +28,8 @@ class TX:
         self.value = []
         self.scriptPubKey = []
         self.scriptPubKey_len = []
-        self.scriptWitness = []
-        self.scriptWitness_len = []
+        self.scriptWitness = [[]]
+        self.scriptWitness_len = [[]]
 
         self.isWitness = None  # TX type (SegWit or not)
         self.offset = 0
@@ -244,7 +244,7 @@ class TX:
             tx.isWitness = False
         else:  # witness TX
             tx.isWitness = True
-            flag = parse_element(tx, 1)  # check flag and shift 2 bytes
+            flag = parse_element(tx, 1)  # get flag and shift 2 bytes
             # get witness TX inputs count as varint
             tx.inputs = int(parse_varint(tx), 16)
 
@@ -272,13 +272,25 @@ class TX:
             tx.scriptPubKey.append(OutputScript.from_hex(
                 parse_element(tx, tx.scriptPubKey_len[i])))
 
+        # WITNESS DATA
         if tx.isWitness:
-            tx.witness_count = int(parse_varint(tx))
-            for _ in range(tx.witness_count):
-                tx.scriptWitness_len.append(int(parse_varint(tx), 16))
-                tx.scriptWitness.append(
-                    parse_element(tx, tx.scriptWitness_len[_]))
 
+            for tx_in in range(tx.inputs):
+
+                tx.witness_count.append(int(parse_varint(tx)))
+
+                for _ in range(tx.witness_count[tx_in]):
+                    tx.scriptWitness_len[tx_in].append(
+                        int(parse_varint(tx), 16))
+                    tx.scriptWitness[tx_in].append(
+                        parse_element(tx, tx.scriptWitness_len[tx_in][_]))
+
+                tx.scriptWitness_len.append([])  # todo remove unnecessary list
+                tx.scriptWitness.append([])  # todo remove unnecessary list
+            del tx.scriptWitness_len[-1]
+            del tx.scriptWitness[-1]
+
+        # nLockTime
         tx.nLockTime = int(change_endianness(parse_element(tx, 4)), 16)
 
         if tx.offset != len(tx.hex):  # and not tx.isWitness:
@@ -596,7 +608,7 @@ class TX:
                   str(self.nSequence[i]) + " (" + int2bytes(self.nSequence[i], 4) + ")")
             if self.isWitness:  # todo! chack if there a TX with more than 1 witnes vin or with witness 0
                 print("\t txinwitness:")
-                for _ in self.scriptWitness:
+                for _ in self.scriptWitness[i]:
                     print('\t\t', _)
 
         print("number of outputs: " + str(self.outputs) +
