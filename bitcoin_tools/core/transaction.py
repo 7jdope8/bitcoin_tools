@@ -6,7 +6,7 @@ from bitcoin_tools.core.keys import serialize_pk, ecdsa_tx_sign
 from bitcoin_tools.core.script import InputScript, OutputScript, Script, SIGHASH_ALL, SIGHASH_SINGLE, SIGHASH_NONE, \
     SIGHASH_ANYONECANPAY
 from bitcoin_tools.utils import change_endianness, encode_varint, int2bytes, is_public_key, is_btc_addr, is_script, \
-    parse_element, parse_varint, get_prev_ScriptPubKey
+    parse_element, parse_varint, get_prev_ScriptPubKey, decode_varint
 
 
 class TX:
@@ -238,7 +238,7 @@ class TX:
         tx.version = int(change_endianness(parse_element(tx, 4)), 16)
 
         # INPUTS
-        tx.inputs = int(parse_varint(tx), 16)
+        tx.inputs = decode_varint(parse_varint(tx))
 
         if tx.inputs > 0:  # regular TX
             tx.isWitness = False
@@ -246,7 +246,7 @@ class TX:
             tx.isWitness = True
             flag = parse_element(tx, 1)  # get flag and shift 2 bytes
             # get witness TX inputs count as varint
-            tx.inputs = int(parse_varint(tx), 16)
+            tx.inputs = decode_varint(parse_varint(tx))
 
         for i in range(tx.inputs):
             # outpoint txid
@@ -255,7 +255,7 @@ class TX:
             tx.prev_out_index.append(
                 int(change_endianness(parse_element(tx, 4)), 16))
             # ScriptSig
-            tx.scriptSig_len.append(int(parse_varint(tx), 16))
+            tx.scriptSig_len.append(decode_varint(parse_varint(tx)))
             # asm/hex
             tx.scriptSig.append(InputScript.from_hex(
                 parse_element(tx, tx.scriptSig_len[i])))
@@ -263,12 +263,12 @@ class TX:
             tx.nSequence.append(int(parse_element(tx, 4), 16))
 
         # OUTPUTS
-        tx.outputs = int(parse_varint(tx), 16)
+        tx.outputs = decode_varint(parse_varint(tx))
 
         for i in range(tx.outputs):
             tx.value.append(int(change_endianness(parse_element(tx, 8)), 16))
             # ScriptPubKey
-            tx.scriptPubKey_len.append(int(parse_varint(tx), 16))
+            tx.scriptPubKey_len.append(decode_varint(parse_varint(tx)))
             tx.scriptPubKey.append(OutputScript.from_hex(
                 parse_element(tx, tx.scriptPubKey_len[i])))
 
@@ -277,11 +277,11 @@ class TX:
 
             for tx_in in range(tx.inputs):
 
-                tx.witness_count.append(int(parse_varint(tx)))
+                tx.witness_count.append(decode_varint(parse_varint(tx)))
 
                 for _ in range(tx.witness_count[tx_in]):
                     tx.scriptWitness_len[tx_in].append(
-                        int(parse_varint(tx), 16))
+                        decode_varint(parse_varint(tx)))
                     tx.scriptWitness[tx_in].append(
                         parse_element(tx, tx.scriptWitness_len[tx_in][_]))
 
